@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مولّد المذكرة الذكي — AI Booklet</title>
+<meta name="description" content="حوّل نصوصك إلى مذكرات PDF احترافية مع تعديل بصري مباشر بالذكاء الاصطناعي">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="app-container" id="appContainer">
+
+  <!-- ── Top Navbar ── -->
+  <header class="top-nav">
+    <div class="brand">
+      <div class="logo-icon">📖</div>
+      <div>
+        <h1 class="brand-title">مولّد المذكرة الذكي</h1>
+        <p class="brand-sub">توليد وتنسيق فوري بالذكاء الاصطناعي</p>
+      </div>
+    </div>
+
+    <div class="nav-actions">
+      <div class="usage-badge" id="usageBadge">
+        <span class="usage-dot"></span>
+        <span>التحويلات المتبقية: <strong id="usageCount">{{ remaining if remaining is defined else 30 }}</strong> / 30</span>
+      </div>
+      <button class="btn-secondary btn-sm" id="newBookletBtn" onclick="resetToNewBooklet()" style="display: {% if has_booklet %}inline-flex{% else %}none{% endif %};">
+        <span>+ مذكرة جديدة</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ════════════════════════════════════════════════════════
+       VIEW 1: INPUT CREATION VIEW
+       ════════════════════════════════════════════════════════ -->
+  <section class="view-panel" id="inputView" style="display: {% if has_booklet %}none{% else %}block{% endif %};">
+    <div class="card input-card">
+      <div class="card-hero">
+        <h2>حوّل أي نص خام إلى مذكرة PDF منسقة تلقائياً</h2>
+        <p>الصق المحتوى وسيتولى الذكاء الاصطناعي تصنيف العناوين، الفقرات، القوائم، والتمارين فوراً.</p>
+      </div>
+
+      <div class="sample-prompts">
+        <span class="sample-label">أمثلة سريعة:</span>
+        <button type="button" class="chip" onclick="fillSample(1)">درس فيزياء (قوانين نيوتن)</button>
+        <button type="button" class="chip" onclick="fillSample(2)">فصل لغة إنجليزية (Grammar)</button>
+        <button type="button" class="chip" onclick="fillSample(3)">محاضرة تاريخ وحضارة</button>
+      </div>
+
+      <form id="convertForm" onsubmit="handleConvert(event)">
+        <div class="textarea-wrap">
+          <textarea name="raw_text" id="rawText" rows="11"
+            placeholder="الصق نصك هنا بأي لغة وبدون أي تنسيق مسبق...&#10;&#10;مثال: درس يحتوي على عناوين ونقاط رئيسية وأسئلة وتمارين..." required></textarea>
+          <div class="textarea-footer">
+            <span id="charCounter">0 حرف</span>
+            <button type="button" class="clear-link" onclick="clearText()">مسح النص</button>
+          </div>
+        </div>
+
+        <div class="form-submit-row">
+          <button type="submit" class="btn-primary btn-lg" id="convertBtn">
+            <span class="spinner" id="convertSpinner"></span>
+            <span id="convertBtnText">✨ إنشاء المذكرة بالـ AI</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- Animated Progress Card (Hidden by default) -->
+      <div class="progress-box" id="progressBox" style="display:none;">
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" id="progressFill"></div>
+        </div>
+        <p class="progress-status" id="progressStatus">جاري تحليل وهيكلة المحتوى بالذكاء الاصطناعي...</p>
+      </div>
+
+      <!-- Error alert -->
+      <div class="error-box" id="convertError" style="display:none;">
+        <span class="err-icon">⚠️</span>
+        <span id="convertErrorMsg"></span>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════
+       VIEW 2: UNIFIED WORKSPACE (PREVIEW + VISUAL AI CHAT)
+       ════════════════════════════════════════════════════════ -->
+  <section class="view-panel" id="workspaceView" style="display: {% if has_booklet %}block{% else %}none{% endif %};">
+    <div class="workspace-grid">
+
+      <!-- ── Column 1: Visual AI Styling Chat ── -->
+      <div class="card chat-card">
+        <div class="card-header-clean">
+          <div class="chat-header-title">
+            <span class="header-icon">🤖</span>
+            <div>
+              <h3>مساعد المذكرة الذكي (AI Copilot)</h3>
+              <p class="text-sub">عدّل التصميم، أضف تمارين، لخّص أو أعد الصياغة بمجرد محادثة الـ AI</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick visual and content suggestions -->
+        <div class="suggestions-bar">
+          <span class="chip" onclick="quickStyle('أضف تمرينين جديدين مع الحل النموذجي')">+ تمارين جديدة</span>
+          <span class="chip" onclick="quickStyle('لخّص الفقرات واجعلها نقاط رئيسية موجزة')">⚡ تلخيص ذكي</span>
+          <span class="chip" onclick="quickStyle('نسّق المذكرة بتصميم كحلي وذهبي رسمي فخم')">🎨 ثيم رسمي فخم</span>
+          <span class="chip" onclick="quickStyle('أضف قسم نصائح ذهبية للمذاكرة في النهاية')">+ نصائح للمذاكرة</span>
+          <span class="chip" onclick="quickStyle('غيّر لون العنوان للأزرق وكبّر الخط')">تكبير وتلوين الخط</span>
+          <span class="chip" onclick="quickStyle('ترجم الأسئلة والتمارين إلى الإنجليزية')">🌐 ترجمة الأسئلة</span>
+        </div>
+
+        <!-- Live Chat Box -->
+        <div class="chat-stream" id="chatStream">
+          <div class="msg-ai welcome-bubble">
+            <span>👋</span>
+            <div>
+              <strong>أهلاً بك! أنا مساعدك الذكي للمذكرة.</strong><br>
+              يمكنك أن تطلب مني <strong>أي شيء يخطر ببالك</strong>: تعديل الألوان والتنسيق، إضافة أو حذف أقسام، توليد تمارين إضافية، تلخيص المحتوى، أو ترجمته! وسأطبقه فوراً على المعاينة المجاورة.
+            </div>
+          </div>
+          {% if history %}
+            {% for msg in history %}
+              {% if msg.role == "user" %}
+                <div class="msg-user">{{ msg.text }}</div>
+              {% else %}
+                <div class="msg-ai">{{ msg.text }}</div>
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+        </div>
+
+        <!-- Inline Error Alert in Chat -->
+        <div class="error-box" id="chatError" style="display:none; margin: 8px 0;">
+          <span class="err-icon">⚠️</span>
+          <span id="chatErrorMsg"></span>
+        </div>
+
+        <!-- Chat Input Form -->
+        <form class="chat-input-box" id="styleForm" onsubmit="handleStyleSubmit(event)">
+          <input type="text" id="styleMsgInput" placeholder="اطلب أي تعديل (مثال: أضف 3 أسئلة جديدة، نسّق الألوان، لخّص الدرس)..." autocomplete="off" required>
+          <button type="submit" class="btn-primary" id="styleSendBtn">
+            <span class="spinner" id="styleSpinner"></span>
+            <span id="styleSendText">تنفيذ</span>
+          </button>
+        </form>
+
+        <!-- Chat Footer Actions -->
+        <div class="chat-footer-actions">
+          <a href="/download" id="downloadBtn" class="btn-primary btn-download" download>
+            <span>⬇ تحميل PDF النهائي</span>
+          </a>
+          <button type="button" class="btn-danger btn-sm" onclick="resetStyles()">
+            <span>↺ استعادة التنسيق الأصلي</span>
+          </button>
+        </div>
+
+      </div><!-- /chat-card -->
+
+
+      <!-- ── Column 2: Live PDF Preview ── -->
+      <div class="card preview-card">
+        <div class="card-header-clean">
+          <div class="preview-header-meta">
+            <span class="live-pill"><span class="pulse-dot"></span> معاينة حية</span>
+            <span class="preview-title" id="bookletDisplayTitle">المذكرة الحالية</span>
+          </div>
+          <div class="preview-header-actions">
+            <button class="btn-secondary btn-sm" onclick="refreshPreview()" title="إعادة تحميل المعاينة">
+              <span>↻ تحديث</span>
+            </button>
+            <a href="/download" class="btn-secondary btn-sm" title="تحميل مباشر">
+              <span>⬇ PDF</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="pdf-wrapper">
+          <div class="iframe-loader" id="pdfLoader" style="display:none;">
+            <div class="spinner-large"></div>
+            <span>جاري تحديث ملف الـ PDF...</span>
+          </div>
+          <iframe src="{% if has_booklet %}/pdf_live{% else %}about:blank{% endif %}" id="livePdfFrame" title="معاينة المذكرة المباشرة"></iframe>
+        </div>
+      </div><!-- /preview-card -->
+
+    </div><!-- /workspace-grid -->
+  </section>
+
+</div><!-- /app-container -->
+
+
+<!-- ════════════════════════════════════════════════════════
+     FRONTEND CONTROLLER JAVASCRIPT
+     ════════════════════════════════════════════════════════ -->
+<script>
+const SAMPLES = {
+  1: `قوانين نيوتن للحركة في علم الفيزياء
+
+قوانين الحركة لنيوتن هي ثلاثة قوانين فيزيائية تؤسس علم الميكانيكا الكلاسيكية، وتربط بين القوى المؤثرة على الجسم وحركته.
+
+القانون الأول (القصور الذاتي):
+يظل الجسم على حالته من سكون أو حركة منتظمة في خط مستقيم ما لم تؤثر عليه قوة خارجية تغير من حالته.
+
+القانون الثاني (التسارع):
+تسارع الجسم يتناسب طردياً مع القوة المحصلة المؤثرة عليه وعكسياً مع كتلته (F = m * a).
+
+أهم التطبيقات العملية:
+- تصميم أحزمة الأمان والوسائد الهوائية في السيارات لحماية الركاب عند التوقف المفاجئ.
+- إطلاق الصواريخ والمركبات الفضائية بالاعتماد على قانون الفعل ورد الفعل.
+- حركة الأقمار الصناعية في مدارات ثابتة حول الأرض.
+
+تمرين تطبيقي:
+إذا أثرت قوة مقدارها 50 نيوتن على جسم كتلته 10 كجم، فما هو مقدار التسارع الناتج؟`,
+
+  2: `English Grammar: The Present Perfect Tense
+
+The Present Perfect is used to describe an action that happened at an unspecified time before now, or an action that started in the past and continues into the present.
+
+Form and Structure:
+Subject + have / has + Past Participle (V3).
+
+Key Usage Situations:
+- Experiences in life without mentioning the exact time (e.g., I have visited Japan).
+- Actions that happened in the past with a visible result in the present.
+- Situations that started in the past and are still true now (e.g., She has lived here for 5 years).
+
+Common Signal Words:
+- Already, Yet, Just
+- Ever, Never
+- Since (specific point in time), For (duration of time)
+
+Practice Exercise:
+Rewrite the following sentence using Present Perfect: 'She started learning French in 2020 and she is still learning it.'`,
+
+  3: `تاريخ الحضارة الإسلامية: بيت الحكمة في بغداد
+
+تأسس بيت الحكمة في عهد الخليفة العباسي هارون الرشيد وازدهر ازدهاراً منقطع النظير في عهد ابنه المأمون، ليصبح أعظم مجمع علمي وترجمي في العصر الوسيط.
+
+الدور الحضاري والعلمي:
+كان بيت الحكمة مكتبة ضخمة وداراً للترجمة ومركزاً للبحث والتأليف في مختلف العلوم كالرياضيات والفلك والطب والفلسفة.
+
+أبرز إنجازات بيت الحكمة:
+- ترجمة أمهات الكتب الإغريقية والهندية والفارسية إلى اللغة العربية.
+- تطوير علم الجبر على يد العالم المسلم محمد بن موسى الخوارزمي.
+- بناء المراصد الفلكية ورسم خرائط دقيقة للأرض والنجوم.
+
+سؤال للمناقشة:
+وضح كيف ساهم بيت الحكمة في نقل التراث العلمي الإنساني إلى أوروبا خلال عصر النهضة؟`
+};
+
+// Character counter
+const rawTextEl = document.getElementById('rawText');
+const charCounterEl = document.getElementById('charCounter');
+if (rawTextEl) {
+  rawTextEl.addEventListener('input', function() {
+    charCounterEl.textContent = this.value.length + ' حرف';
+  });
+}
+
+function clearText() {
+  if (rawTextEl) {
+    rawTextEl.value = '';
+    charCounterEl.textContent = '0 حرف';
+    rawTextEl.focus();
+  }
+}
+
+function fillSample(id) {
+  if (SAMPLES[id] && rawTextEl) {
+    rawTextEl.value = SAMPLES[id];
+    charCounterEl.textContent = SAMPLES[id].length + ' حرف';
+    rawTextEl.focus();
+  }
+}
+
+// Convert Form Handler (AJAX)
+async function handleConvert(e) {
+  e.preventDefault();
+  const text = rawTextEl.value.trim();
+  if (!text) return;
+
+  const btn = document.getElementById('convertBtn');
+  const btnText = document.getElementById('convertBtnText');
+  const errorBox = document.getElementById('convertError');
+  const errorMsg = document.getElementById('convertErrorMsg');
+  const progressBox = document.getElementById('progressBox');
+  const progressFill = document.getElementById('progressFill');
+  const progressStatus = document.getElementById('progressStatus');
+
+  errorBox.style.display = 'none';
+  btn.classList.add('loading');
+  btnText.textContent = 'جاري المعالجة...';
+  progressBox.style.display = 'block';
+  progressFill.style.width = '30%';
+  progressStatus.textContent = '🧠 جاري قراءة النص وتحليله بالذكاء الاصطناعي...';
+
+  const progressInterval = setInterval(() => {
+    let w = parseInt(progressFill.style.width) || 30;
+    if (w < 85) {
+      w += 15;
+      progressFill.style.width = w + '%';
+      if (w >= 60) progressStatus.textContent = '📄 جاري هيكلة الأقسام وتوليد صفحات المذكرة...';
+    }
+  }, 1200);
+
+  try {
+    const res = await fetch('/api/convert', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ raw_text: text })
+    });
+
+    clearInterval(progressInterval);
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'فشل توليد المذكرة، يرجى المحاولة ثانية.');
+    }
+
+    progressFill.style.width = '100%';
+    progressStatus.textContent = '✅ اكتمل التوليد بنجاح!';
+
+    // Update usage badge
+    if (data.remaining !== undefined) {
+      document.getElementById('usageCount').textContent = data.remaining;
+    }
+
+    setTimeout(() => {
+      // Transition to Workspace View smoothly
+      document.getElementById('inputView').style.display = 'none';
+      document.getElementById('workspaceView').style.display = 'block';
+      document.getElementById('newBookletBtn').style.display = 'inline-flex';
+
+      // Clear chat messages to clean state
+      const chatStream = document.getElementById('chatStream');
+      chatStream.innerHTML = `
+        <div class="msg-ai welcome-bubble">
+          <span>👋</span>
+          <div>
+            <strong>تم إنشاء مذكرتك بنجاح!</strong> ألقِ نظرة على المعاينة المجاورة. أخبرني بأي تعديل بصري تريده وسأطبقه في الحال.
+          </div>
+        </div>
+      `;
+
+      // Load PDF
+      refreshPreview();
+      btn.classList.remove('loading');
+      btnText.textContent = '✨ إنشاء المذكرة بالـ AI';
+      progressBox.style.display = 'none';
+    }, 400);
+
+  } catch (err) {
+    clearInterval(progressInterval);
+    btn.classList.remove('loading');
+    btnText.textContent = '✨ إنشاء المذكرة بالـ AI';
+    progressBox.style.display = 'none';
+    errorMsg.textContent = err.message;
+    errorBox.style.display = 'flex';
+  }
+}
+
+// Refresh live PDF preview
+function refreshPreview() {
+  const frame = document.getElementById('livePdfFrame');
+  const loader = document.getElementById('pdfLoader');
+  if (!frame) return;
+
+  if (loader) loader.style.display = 'flex';
+  const timestamp = Date.now();
+  frame.src = '/pdf_live?t=' + timestamp;
+
+  frame.onload = () => {
+    if (loader) loader.style.display = 'none';
+  };
+}
+
+// Quick visual modification chips
+function quickStyle(promptText) {
+  const input = document.getElementById('styleMsgInput');
+  input.value = promptText;
+  input.focus();
+  // Directly trigger submit
+  const form = document.getElementById('styleForm');
+  form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+}
+
+// Handle Visual AI Style Chat
+async function handleStyleSubmit(e) {
+  e.preventDefault();
+  const input = document.getElementById('styleMsgInput');
+  const userMsg = input.value.trim();
+  if (!userMsg) return;
+
+  const btn = document.getElementById('styleSendBtn');
+  const btnText = document.getElementById('styleSendText');
+  const errorBox = document.getElementById('chatError');
+  const errorMsg = document.getElementById('chatErrorMsg');
+  const chatStream = document.getElementById('chatStream');
+
+  errorBox.style.display = 'none';
+  btn.classList.add('loading');
+  btnText.textContent = 'جاري التطبيق...';
+
+  // Append user message immediately
+  const userDiv = document.createElement('div');
+  userDiv.className = 'msg-user';
+  userDiv.textContent = userMsg;
+  chatStream.appendChild(userDiv);
+  chatStream.scrollTop = chatStream.scrollHeight;
+
+  // Clear input
+  input.value = '';
+
+  // Show live PDF loader subtle indicator
+  const pdfLoader = document.getElementById('pdfLoader');
+  if (pdfLoader) pdfLoader.style.display = 'flex';
+
+  try {
+    const res = await fetch('/api/style-chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_msg: userMsg })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'لم يتمكن الـ AI من تطبيق التعديل');
+    }
+
+    // Append AI response
+    const aiDiv = document.createElement('div');
+    aiDiv.className = 'msg-ai';
+    aiDiv.innerHTML = `<div>${data.ai_reply}</div>`;
+    chatStream.appendChild(aiDiv);
+    chatStream.scrollTop = chatStream.scrollHeight;
+
+    // Refresh PDF preview immediately with new styles
+    refreshPreview();
+
+  } catch (err) {
+    if (pdfLoader) pdfLoader.style.display = 'none';
+    errorMsg.textContent = err.message;
+    errorBox.style.display = 'flex';
+
+    const errDiv = document.createElement('div');
+    errDiv.className = 'msg-ai err-bubble';
+    errDiv.innerHTML = `⚠️ ${err.message}`;
+    chatStream.appendChild(errDiv);
+    chatStream.scrollTop = chatStream.scrollHeight;
+  } finally {
+    btn.classList.remove('loading');
+    btnText.textContent = 'تطبيق';
+  }
+}
+
+// Reset all styles
+async function resetStyles() {
+  if (!confirm('هل تريد استعادة التنسيقات والألوان الافتراضية للمذكرة؟')) return;
+  try {
+    await fetch('/api/reset-style', { method: 'POST' });
+    const chatStream = document.getElementById('chatStream');
+    const notice = document.createElement('div');
+    notice.className = 'msg-ai';
+    notice.textContent = '↺ تمت استعادة التنسيقات الافتراضية بنجاح.';
+    chatStream.appendChild(notice);
+    chatStream.scrollTop = chatStream.scrollHeight;
+    refreshPreview();
+  } catch (err) {
+    alert('حدث خطأ أثناء استعادة التنسيق');
+  }
+}
+
+// Start New Booklet (Reset to input view)
+async function resetToNewBooklet() {
+  if (!confirm('هل تريد بدء مذكرة جديدة؟ سيتم مسح المذكرة الحالية.')) return;
+  try {
+    const res = await fetch('/api/clear-booklet', { method: 'POST' });
+    const data = await res.json();
+    if (data.remaining !== undefined) {
+      document.getElementById('usageCount').textContent = data.remaining;
+    }
+    document.getElementById('workspaceView').style.display = 'none';
+    document.getElementById('inputView').style.display = 'block';
+    document.getElementById('newBookletBtn').style.display = 'none';
+    document.getElementById('livePdfFrame').src = 'about:blank';
+    clearText();
+  } catch (err) {
+    window.location.href = '/';
+  }
+}
+
+// Scroll chat to bottom on load if already in workspace
+const cs = document.getElementById('chatStream');
+if (cs) cs.scrollTop = cs.scrollHeight;
+</script>
+
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تعديل بصري بالـ AI — AI Booklet</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="page-wrap">
+  <div class="card">
+
+    <div class="page-header">
+      <a href="/preview" class="back-btn" title="رجوع">←</a>
+      <h1>🎨 تعديل بصري بالـ AI</h1>
+    </div>
+
+    <div class="chat-layout">
+
+      <!-- ── Chat Panel ── -->
+      <div class="chat-panel">
+
+        <div class="suggestions" id="suggestions">
+          <span class="chip" onclick="fillMsg(this)">غيّر لون العنوان للأزرق</span>
+          <span class="chip" onclick="fillMsg(this)">كبّر حجم خط الفقرات</span>
+          <span class="chip" onclick="fillMsg(this)">خلفية صندوق التمارين صفراء فاتحة</span>
+          <span class="chip" onclick="fillMsg(this)">لون نقاط القائمة أخضر</span>
+          <span class="chip" onclick="fillMsg(this)">زد التباعد بين السطور</span>
+        </div>
+
+        <div class="chat-box" id="chatBox">
+          {% if not history %}
+          <div class="msg-ai welcome">👋 أهلاً! أخبرني بأي تعديل بصري تريده على المذكرة.</div>
+          {% endif %}
+          {% for msg in history %}
+            {% if msg.role == "user" %}
+            <div class="msg-user">{{ msg.text }}</div>
+            {% else %}
+            <div class="msg-ai">{{ msg.text }}</div>
+            {% endif %}
+          {% endfor %}
+          {% if error %}
+          <div class="msg-ai" style="color:var(--red); border-color:rgba(248,113,113,.25);">⚠️ {{ error }}</div>
+          {% endif %}
+        </div>
+
+        <form class="chat-input-row" method="POST" action="/style-chat" id="chatForm">
+          <input type="text" name="user_msg" id="userMsg"
+            placeholder="اكتب طلبك هنا..." autocomplete="off" required>
+          <button type="submit" class="btn-primary" id="sendBtn">
+            <span class="spinner" id="sendSpinner"></span>
+            <span id="sendText">إرسال</span>
+          </button>
+        </form>
+
+        <p class="chat-hint">
+          <span>💡</span>
+          مسموح فقط: لون · حجم خط · وزن خط · تباعد · حواف · خلفية
+        </p>
+
+        <div class="actions" style="margin-top:8px;">
+          <a href="/pdf_styled" class="btn-primary">⬇ تحميل PDF المعدّل</a>
+          <a href="/reset-style" class="btn-danger">↺ إعادة تعيين</a>
+        </div>
+
+      </div>
+
+      <!-- ── PDF Preview Panel ── -->
+      <div class="pdf-preview-panel">
+        <iframe src="/pdf_styled" id="pdfPreview" title="معاينة المذكرة"></iframe>
+      </div>
+
+    </div><!-- /chat-layout -->
+
+  </div>
+</div>
+
+<script>
+// Auto-scroll chat
+var cb = document.getElementById('chatBox');
+if (cb) {
+  cb.scrollTop = cb.scrollHeight;
+}
+
+// Loading state on send
+document.getElementById('chatForm').addEventListener('submit', function() {
+  var btn = document.getElementById('sendBtn');
+  btn.classList.add('loading');
+  document.getElementById('sendText').textContent = 'جاري التطبيق...';
+});
+
+// Suggestion chips
+function fillMsg(el) {
+  var input = document.getElementById('userMsg');
+  input.value = el.textContent.trim();
+  input.focus();
+}
+
+// Reload iframe after successful POST to reflect new styles
+{% if post_success %}
+var iframe = document.getElementById('pdfPreview');
+if (iframe) {
+  iframe.src = '/pdf_styled?t=' + Date.now();
+}
+{% endif %}
+</script>
+</body>
+</html>

@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+
+@page {
+  size: A4;
+  margin: 14mm 14mm;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Cairo', sans-serif;
+  font-size: 10.5pt;
+  color: #1a1a1a;
+  background: #fff;
+  direction: rtl;
+  line-height: 1.6;
+}
+
+/* cover strip */
+.booklet-title {
+  background: #1a1a2e;
+  color: #fff;
+  padding: 6mm 8mm;
+  margin-bottom: 5mm;
+  border-radius: 2mm;
+}
+
+.booklet-title h1 {
+  font-size: 16pt;
+  font-weight: 700;
+  font-family: 'Cairo', sans-serif;
+  line-height: 1.3;
+}
+
+/* heading */
+.sec-heading {
+  font-size: 12pt;
+  font-weight: 700;
+  color: #1a1a2e;
+  border-right: 3.5px solid #1a1a2e;
+  padding-right: 3mm;
+  margin: 5mm 0 2.5mm;
+  page-break-after: avoid;
+}
+
+/* paragraph */
+.sec-paragraph {
+  font-size: 10pt;
+  line-height: 1.65;
+  color: #2d3748;
+  margin-bottom: 3.5mm;
+  text-align: justify;
+}
+
+/* bullet list */
+.sec-bullets {
+  margin: 0 4mm 3.5mm 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sec-bullets li {
+  font-size: 10pt;
+  line-height: 1.6;
+  color: #2d3748;
+  padding-right: 4.5mm;
+  position: relative;
+  margin-bottom: 1.5mm;
+}
+
+.sec-bullets li::before {
+  content: "◆";
+  position: absolute;
+  right: 0;
+  color: #1a1a2e;
+  font-size: 6.5pt;
+  top: 2.5pt;
+}
+
+/* exercise box */
+.sec-exercise {
+  background: #f8f9ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 2.5mm;
+  padding: 3.5mm 4.5mm;
+  margin: 3.5mm 0;
+}
+
+.sec-exercise .ex-label {
+  font-size: 8pt;
+  font-weight: 700;
+  color: #3730a3;
+  text-transform: uppercase;
+  letter-spacing: .5pt;
+  margin-bottom: 1.5mm;
+}
+
+.sec-exercise .ex-question {
+  font-size: 10pt;
+  line-height: 1.55;
+  color: #1e1b4b;
+}
+
+.sec-exercise .ex-options {
+  list-style: none;
+  margin: 2mm 0;
+  padding: 0;
+}
+
+.sec-exercise .ex-options li {
+  font-size: 9.5pt;
+  padding: 1mm 2mm;
+  margin-bottom: 1mm;
+  background: rgba(255,255,255,0.7);
+  border-radius: 1.5mm;
+  border: 1px solid #e2e8f0;
+}
+
+.sec-exercise .ex-answer {
+  margin-top: 2mm;
+  border-top: 1px dashed #cbd5e1;
+  min-height: 8mm;
+}
+
+/* numbered list */
+.sec-numbered-list {
+  margin: 0 5mm 3.5mm 0;
+  padding: 0;
+  list-style-type: decimal;
+}
+
+.sec-numbered-list li {
+  font-size: 10pt;
+  line-height: 1.6;
+  color: #2d3748;
+  margin-bottom: 1.5mm;
+  padding-right: 1.5mm;
+}
+
+/* tables */
+.sec-table-wrap {
+  margin: 4mm 0 5mm;
+  width: 100%;
+  overflow: hidden;
+}
+
+.sec-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 9.5pt;
+  border: 1px solid #cbd5e1;
+  border-radius: 2mm;
+}
+
+.sec-table th {
+  background: #1a1a2e;
+  color: #ffffff;
+  font-weight: 700;
+  padding: 2.5mm 3.5mm;
+  text-align: right;
+  border: 1px solid #334155;
+}
+
+.sec-table td {
+  padding: 2.5mm 3.5mm;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.sec-table tr:nth-child(even) td {
+  background: #f8fafc;
+}
+
+/* callouts / notes / tips */
+.sec-callout {
+  background: #fefce8;
+  border-right: 4px solid #ca8a04;
+  border-radius: 2mm;
+  padding: 3.5mm 4.5mm;
+  margin: 3.5mm 0;
+}
+
+.sec-callout .callout-title {
+  font-weight: 700;
+  font-size: 9pt;
+  color: #854d0e;
+  margin-bottom: 1.5mm;
+}
+
+.sec-callout p {
+  font-size: 9.5pt;
+  line-height: 1.55;
+  color: #713f12;
+}
+
+/* quotes */
+.sec-quote {
+  border-right: 3.5px solid #6366f1;
+  background: #f5f3ff;
+  padding: 3mm 4.5mm;
+  margin: 3.5mm 0;
+  border-radius: 2mm;
+  font-style: italic;
+}
+
+.sec-quote p {
+  font-size: 10pt;
+  line-height: 1.6;
+  color: #4338ca;
+}
+
+.sec-quote footer {
+  font-size: 8.5pt;
+  color: #6366f1;
+  margin-top: 1.5mm;
+  text-align: left;
+}
+
+/* code block */
+.sec-code {
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 3.5mm 4.5mm;
+  border-radius: 2mm;
+  font-family: 'Courier New', monospace;
+  font-size: 9pt;
+  direction: ltr;
+  text-align: left;
+  white-space: pre-wrap;
+  margin: 3.5mm 0;
+}
+</style>
+{% if override_css %}
+<style id="custom-override-css">
+{{ override_css }}
+</style>
+{% endif %}
+</head>
+<body>
+
+<div class="booklet-title">
+  <h1>{{ data.title }}</h1>
+</div>
+
+{% for s in data.sections %}
+
+  {% if s.type in ("heading", "title", "subheading", "h1", "h2", "h3") %}
+  <div class="sec-heading">{{ s.text or s.title }}</div>
+
+  {% elif s.type == "paragraph" %}
+  <p class="sec-paragraph">{{ s.text }}</p>
+
+  {% elif s.type in ("bullet_list", "list") %}
+  <ul class="sec-bullets">
+    {% for item in s["items"] %}
+    <li>{{ item }}</li>
+    {% endfor %}
+  </ul>
+
+  {% elif s.type in ("numbered_list", "ordered_list") %}
+  <ol class="sec-numbered-list">
+    {% for item in s["items"] %}
+    <li>{{ item }}</li>
+    {% endfor %}
+  </ol>
+
+  {% elif s.type == "table" %}
+  <div class="sec-table-wrap">
+    <table class="sec-table">
+      {% if s.headers %}
+      <thead>
+        <tr>
+          {% for h in s.headers %}
+          <th>{{ h }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      {% endif %}
+      <tbody>
+        {% for row in s.rows %}
+        <tr>
+          {% for cell in row %}
+          <td>{{ cell }}</td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% elif s.type in ("callout", "note", "tip", "warning", "box", "highlight") %}
+  <div class="sec-callout">
+    <div class="callout-title">💡 {{ s.title or 'ملاحظة هامة' }}</div>
+    <p>{{ s.text }}</p>
+  </div>
+
+  {% elif s.type in ("quote", "blockquote") %}
+  <blockquote class="sec-quote">
+    <p>{{ s.text }}</p>
+    {% if s.author %}<footer>— {{ s.author }}</footer>{% endif %}
+  </blockquote>
+
+  {% elif s.type in ("code", "code_block") %}
+  <pre class="sec-code"><code>{{ s.code or s.text }}</code></pre>
+
+  {% elif s.type in ("exercise", "quiz", "question") %}
+  <div class="sec-exercise">
+    <div class="ex-label">تمرين</div>
+    <div class="ex-question">{{ s.question or s.text }}</div>
+    {% if s.options %}
+    <ul class="ex-options">
+      {% for opt in s.options %}
+      <li>{{ opt }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    {% if s.answer %}
+    <div style="font-size: 8.5pt; color:#475569; margin-top:2mm;"><strong>الإجابة:</strong> {{ s.answer }}</div>
+    {% else %}
+    <div class="ex-answer"></div>
+    {% endif %}
+  </div>
+
+  {% else %}
+  <!-- Fallback for any generic section -->
+  <p class="sec-paragraph">{{ s.text or s.question or s }}</p>
+  {% endif %}
+
+{% endfor %}
+
+</body>
+</html>
