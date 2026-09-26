@@ -47,40 +47,35 @@ def increment_usage():
     u["count"] += 1
     _save_usage(u)
 
-PROMPT = """Analyze the following text and convert it into a professional, structured booklet JSON object with a CUSTOM DESIGN tailored to the topic.
+PROMPT = """أنت محرر محتوى تعليمي محترف، حلل بنية النص الفعلية وحوله إلى كائن JSON منظم لمذكرة تعليمية احترافية.
 
-1. Content Structuring:
-- Choose the best matching section types: heading, paragraph, bullet_list, numbered_list, table, callout, quote, exercise (with options & answer).
+قواعد تصنيف المحتوى:
+1. استخدم `table` فقط لما المحتوى بيانات متوازية بعمودين فأكثر وأكثر من صف (مثل: تصريف أفعال، مفردات ومعانيها، مقارنات). ممنوع تحويل قائمة عادية لجدول — لو مش متأكد استخدم `bullet_list`.
+2. استخدم `note` فقط للتعريفات الصريحة أو التنبيهات المهمة في النص التي تستحق تمييزاً بصرياً خفيفاً.
+3. استخدم `numbered_list` للخطوات المرتبة التي يجب حفظ ترتيبها.
+4. استخدم `bullet_list` للقوائم النقطية غير المرتبة.
+5. استخدم `exercise` للأسئلة أو التمارين الواردة في النص.
+6. استنتج `subtitle` كملخص دقيق وموجز في سطر واحد من النص.
+7. لا تخترع أي محتوى غير موجود في النص الأصلي.
 
-2. Topic-Aware Custom Styling (custom_css):
-Analyze the subject/field of the content and generate tailor-made CSS rules for:
+Analyze the topic and generate tailor-made CSS for:
 - `.booklet-title`: background color/gradient, border-radius, color, padding.
-- `.booklet-title h1`: font-weight, color.
 - `.sec-heading`: heading color, border-right accent color.
-- `.sec-exercise`: exercise card background, border color, border-radius.
-- `.sec-exercise .ex-label`: badge background & text color.
-- `.sec-bullets li::before`: bullet icon (e.g. "✦", "✔", "◆", "●") & color.
+- `.sec-exercise`: exercise card background, border color.
+- `.sec-note`: note card background, border color.
 - `.sec-table th`: table header background color.
-- `.sec-callout`: callout background & border color.
 
-Design inspiration guidelines by topic:
-- **Medicine / Biology / Environment**: Deep forest emerald `#064e3b` / teal `#0f766e`, fresh mint `#10b981` accents, light sage exercise cards `#f0fdf4`.
-- **History / Literature / Religion / Philosophy**: Rich burgundy `#7f1d1d` or royal maroon `#581c87`, warm ivory `#fffbeb` exercise cards, antique gold accents `#b45309`.
-- **Technology / Programming / Physics / Engineering**: Modern slate navy `#0f172a`, vibrant indigo `#4f46e5` or cyan `#06b6d4` highlights, crisp tech borders.
-- **Business / Economics / Finance / Law**: Executive dark sapphire `#1e293b`, warm amber/gold `#d97706` badges and borders, structured cards.
-- **Mathematics / Logic / Science**: Deep cobalt `#1e40af`, clean crisp cards `#f8fafc`.
-- **Children / Fun / School**: Friendly warm indigo `#4338ca`, coral `#ea580c` badges, soft playful rounded borders.
-
-Return ONLY a valid JSON object with this exact structure, no markdown fences, no explanation outside JSON:
+Return ONLY a valid JSON object with this exact structure, no markdown fences, no text outside JSON:
 {
-  "title": "عنوان المذكرة المناسب والواضح",
+  "title": "عنوان المذكرة المناسب",
+  "subtitle": "ملخص سطر واحد يستنتج من النص",
   "sections": [
     { "type": "heading", "text": "..." },
     { "type": "paragraph", "text": "..." },
     { "type": "bullet_list", "items": ["...", "..."] },
     { "type": "numbered_list", "items": ["...", "..."] },
-    { "type": "table", "headers": ["...", "..."], "rows": [["...", "..."]] },
-    { "type": "callout", "title": "ملاحظة هامة", "text": "..." },
+    { "type": "table", "headers": ["الضمير", "الفعل"], "rows": [["أنا", "كتبتُ"], ["أنتَ", "كتبتَ"]] },
+    { "type": "note", "text": "..." },
     { "type": "exercise", "question": "...", "options": ["...", "..."], "answer": "..." }
   ],
   "custom_css": "/* complete tailor-made CSS for this subject */"
@@ -135,43 +130,65 @@ def validate_structure(data):
         raise ValueError("بيانات المذكرة ليست كائن JSON صالح")
     if "title" not in data or not str(data["title"]).strip():
         data["title"] = "مذكرة تعليمية"
+    if "subtitle" not in data or not str(data["subtitle"]).strip():
+        data["subtitle"] = ""
     if "sections" not in data or not isinstance(data["sections"], list):
         data["sections"] = []
     
-    # Normalize and validate all section types safely
+    clean_sections = []
     for s in data["sections"]:
         if not isinstance(s, dict):
             continue
         stype = s.get("type", "paragraph")
-        if stype in ("bullet_list", "list", "numbered_list", "ordered_list"):
-            if "items" not in s or not isinstance(s["items"], list):
-                s["items"] = [s.get("text", "")] if s.get("text") else []
+        if stype == "cover":
+            continue
+        elif stype in ("bullet_list", "list"):
+            items = s.get("items", [])
+            if not isinstance(items, list):
+                items = [s.get("text", "")] if s.get("text") else []
+            clean_sections.append({"type": "bullet_list", "items": items})
+        elif stype in ("numbered_list", "ordered_list"):
+            items = s.get("items", [])
+            if not isinstance(items, list):
+                items = [s.get("text", "")] if s.get("text") else []
+            clean_sections.append({"type": "numbered_list", "items": items})
         elif stype == "table":
-            if "headers" not in s or not isinstance(s["headers"], list):
-                s["headers"] = []
-            if "rows" not in s or not isinstance(s["rows"], list):
-                s["rows"] = []
+            headers = s.get("headers", [])
+            if not isinstance(headers, list):
+                headers = []
+            rows = s.get("rows", [])
+            if not isinstance(rows, list):
+                rows = []
+            clean_sections.append({"type": "table", "headers": headers, "rows": rows})
+        elif stype in ("note", "callout", "tip", "warning", "box"):
+            clean_sections.append({"type": "note", "text": s.get("text") or s.get("content", "")})
         elif stype in ("exercise", "quiz", "question"):
-            if "question" not in s and "text" in s:
-                s["question"] = s["text"]
-        elif stype in ("callout", "note", "tip", "warning", "box"):
-            if "text" not in s:
-                s["text"] = s.get("content", "")
+            clean_sections.append({
+                "type": "exercise",
+                "question": s.get("question") or s.get("text", ""),
+                "options": s.get("options", []),
+                "answer": s.get("answer", "")
+            })
         elif stype in ("heading", "title", "subheading", "h1", "h2", "h3"):
-            if "text" not in s and "title" in s:
-                s["text"] = s["title"]
+            clean_sections.append({"type": "heading", "text": s.get("text") or s.get("title", "")})
         else:
-            # Any unknown type is gracefully handled as paragraph
-            if "text" not in s:
-                s["text"] = s.get("content", str(s))
+            clean_sections.append({"type": "paragraph", "text": s.get("text") or s.get("content", str(s))})
+    
+    # Cover is always inserted automatically as the first element in sections
+    cover_item = {
+        "type": "cover",
+        "title": data["title"],
+        "subtitle": data.get("subtitle", "")
+    }
+    data["sections"] = [cover_item] + clean_sections
 
 def generate_pdf(data, override_css=""):
-    html_str = render_template("booklet.html", data=data, override_css=override_css)
+    html_str = render_template("booklet.html", data=data, override_css=override_css, is_pdf_mode=True)
     if HAS_WEASYPRINT and WeasyprintHTML:
         try:
             return WeasyprintHTML(string=html_str, base_url=None).write_pdf()
-        except Exception:
-            pass
+        except Exception as e:
+            print("WeasyPrint generation error:", e)
     return None
 
 @app.route("/sw.js")
@@ -253,20 +270,30 @@ def pdf_styled():
     custom_css = session.get("custom_css", "")
     pdf = generate_pdf(data, custom_css)
     if pdf:
-        return Response(pdf, mimetype="application/pdf",
-                        headers={"Content-Disposition": "inline; filename=booklet.pdf"})
+        resp = Response(pdf, mimetype="application/pdf")
+        resp.headers["Content-Disposition"] = "inline; filename=booklet.pdf"
+        resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        resp.headers["Pragma"] = "no-cache"
+        return resp
     return render_template("booklet.html", data=data, override_css=custom_css, is_html_preview=True)
 
 @app.route("/download")
 def download():
+    import urllib.parse
     data = session.get("booklet")
     if not data:
         return redirect(url_for("index"))
     custom_css = session.get("custom_css", "")
     pdf = generate_pdf(data, custom_css)
     if pdf:
-        return Response(pdf, mimetype="application/pdf",
-                        headers={"Content-Disposition": "attachment; filename=booklet.pdf"})
+        raw_title = data.get("title", "booklet")
+        clean_title = raw_title.replace("/", "_").replace("\\", "_").replace(":", "_").strip() or "booklet"
+        encoded_title = urllib.parse.quote(f"{clean_title}.pdf")
+        resp = Response(pdf, mimetype="application/pdf")
+        resp.headers["Content-Disposition"] = f"attachment; filename=\"booklet.pdf\"; filename*=UTF-8''{encoded_title}"
+        resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        resp.headers["Pragma"] = "no-cache"
+        return resp
     return render_template("booklet.html", data=data, override_css=custom_css, auto_print=True)
 
 AI_COPILOT_PROMPT = """You are an intelligent AI Booklet Assistant and Document Editor.

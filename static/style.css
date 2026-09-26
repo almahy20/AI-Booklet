@@ -467,11 +467,19 @@ textarea::placeholder {
 .chat-footer-actions {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .btn-download {
+  flex: 1.2;
+  justify-content: center;
+  min-width: 140px;
+}
+
+.btn-print {
   flex: 1;
   justify-content: center;
+  min-width: 130px;
 }
 
 /* ─── Column 2: PDF Preview ─────────────── */

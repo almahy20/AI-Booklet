@@ -17,6 +17,7 @@
 <link rel="icon" type="image/png" href="/static/icons/favicon.png">
 
 <link rel="stylesheet" href="/static/style.css">
+<script src="/static/html2pdf.bundle.min.js"></script>
 </head>
 <body>
 
@@ -176,10 +177,13 @@
         <!-- Chat Footer Actions -->
         <div class="chat-footer-actions">
           <a href="/download" id="downloadBtn" class="btn-primary btn-download" download>
-            <span>⬇ تحميل PDF النهائي</span>
+            <span>⬇ تحميل ملف PDF (.pdf)</span>
           </a>
+          <button type="button" class="btn-secondary btn-print" onclick="downloadBookletPDF()" title="طباعة أو حفظ عبر المتصفح">
+            <span>🖨️ طباعة المذكرة</span>
+          </button>
           <button type="button" class="btn-danger btn-sm" onclick="resetStyles()">
-            <span>↺ استعادة التنسيق الأصلي</span>
+            <span>↺ استعادة التنسيق</span>
           </button>
         </div>
 
@@ -190,15 +194,15 @@
       <div class="card preview-card" id="previewCard">
         <div class="card-header-clean">
           <div class="preview-header-meta">
-            <span class="live-pill"><span class="pulse-dot"></span> معاينة حية</span>
+            <span class="live-pill"><span class="pulse-dot"></span> معاينة حية (PDF)</span>
             <span class="preview-title" id="bookletDisplayTitle">المذكرة الحالية</span>
           </div>
           <div class="preview-header-actions">
             <button class="btn-secondary btn-sm" onclick="refreshPreview()" title="إعادة تحميل المعاينة">
               <span>↻ تحديث</span>
             </button>
-            <a href="/download" class="btn-secondary btn-sm" title="تحميل مباشر">
-              <span>⬇ PDF</span>
+            <a href="/download" class="btn-primary btn-sm" title="تحميل ملف PDF" download>
+              <span>⬇ تحميل PDF</span>
             </a>
           </div>
         </div>
@@ -487,6 +491,49 @@ async function handleStyleSubmit(e) {
     btn.classList.remove('loading');
     btnText.textContent = 'تطبيق';
   }
+}
+
+// Trigger high-quality direct PDF file download
+function downloadDirectPDF() {
+  const frame = document.getElementById('livePdfFrame');
+  if (frame && frame.contentWindow && typeof frame.contentWindow.exportDirectPDF === 'function') {
+    frame.contentWindow.exportDirectPDF();
+    return;
+  }
+  if (frame && frame.contentDocument) {
+    const el = frame.contentDocument.getElementById('bookletContent') || frame.contentDocument.body;
+    const titleEl = document.getElementById('bookletDisplayTitle');
+    const rawTitle = titleEl ? titleEl.textContent : 'booklet';
+    const cleanTitle = rawTitle.replace(/[/\\?%*:|"<>]/g, '_').trim() || 'booklet';
+    const opt = {
+      margin: [10, 10, 10, 10],
+      filename: `${cleanTitle}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    if (window.html2pdf) {
+      window.html2pdf().set(opt).from(el).save();
+      return;
+    }
+  }
+  // Fallback to print
+  downloadBookletPDF();
+}
+
+// Trigger standard A4 browser print / save-to-PDF
+function downloadBookletPDF() {
+  const frame = document.getElementById('livePdfFrame');
+  if (frame && frame.contentWindow) {
+    try {
+      frame.contentWindow.focus();
+      frame.contentWindow.print();
+      return;
+    } catch (e) {
+      console.warn('Iframe print failed:', e);
+    }
+  }
+  window.open('/download', '_blank');
 }
 
 // Reset all styles

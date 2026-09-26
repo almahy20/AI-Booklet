@@ -1,8 +1,9 @@
-const CACHE_NAME = 'ai-booklet-v1';
+const CACHE_NAME = 'ai-booklet-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/static/style.css',
   '/static/manifest.json',
+  '/static/html2pdf.bundle.min.js',
   '/static/icons/icon-192.png',
   '/static/icons/icon-512.png',
   '/static/icons/apple-touch-icon.png'
@@ -34,7 +35,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
   // For API calls and dynamic live PDF / download requests, always use network directly
-  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/pdf_live') || url.pathname.startsWith('/download')) {
+  if (url.pathname.startsWith('/api/') || url.pathname.includes('pdf') || url.pathname.includes('download')) {
     return;
   }
 
