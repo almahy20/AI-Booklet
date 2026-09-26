@@ -88,10 +88,22 @@
        VIEW 2: UNIFIED WORKSPACE (PREVIEW + VISUAL AI CHAT)
        ════════════════════════════════════════════════════════ -->
   <section class="view-panel" id="workspaceView" style="display: {% if has_booklet %}block{% else %}none{% endif %};">
+    
+    <!-- Mobile Tab Switcher (Visible only on tablets/mobile <= 900px) -->
+    <div class="mobile-tabs-bar" id="mobileTabsBar">
+      <button type="button" class="mobile-tab-btn active" id="tabChatBtn" onclick="switchMobileTab('chat')">
+        <span>🤖 مساعد الـ AI</span>
+      </button>
+      <button type="button" class="mobile-tab-btn" id="tabPdfBtn" onclick="switchMobileTab('pdf')">
+        <span>📄 معاينة المذكرة (PDF)</span>
+        <span class="tab-badge" id="pdfUpdateBadge" style="display:none;">تحديث ✨</span>
+      </button>
+    </div>
+
     <div class="workspace-grid">
 
       <!-- ── Column 1: Visual AI Styling Chat ── -->
-      <div class="card chat-card">
+      <div class="card chat-card" id="chatCard">
         <div class="card-header-clean">
           <div class="chat-header-title">
             <span class="header-icon">🤖</span>
@@ -161,7 +173,7 @@
 
 
       <!-- ── Column 2: Live PDF Preview ── -->
-      <div class="card preview-card">
+      <div class="card preview-card" id="previewCard">
         <div class="card-header-clean">
           <div class="preview-header-meta">
             <span class="live-pill"><span class="pulse-dot"></span> معاينة حية</span>
@@ -441,6 +453,12 @@ async function handleStyleSubmit(e) {
     // Refresh PDF preview immediately with new styles
     refreshPreview();
 
+    // On mobile, show badge on PDF preview tab if user is currently on chat tab
+    if (window.innerWidth <= 900 && currentMobileTab === 'chat') {
+      const badge = document.getElementById('pdfUpdateBadge');
+      if (badge) badge.style.display = 'inline-block';
+    }
+
   } catch (err) {
     if (pdfLoader) pdfLoader.style.display = 'none';
     errorMsg.textContent = err.message;
@@ -493,9 +511,50 @@ async function resetToNewBooklet() {
   }
 }
 
+// Mobile workspace tab switcher
+let currentMobileTab = 'chat';
+function switchMobileTab(tab) {
+  currentMobileTab = tab;
+  const chatCard = document.getElementById('chatCard');
+  const previewCard = document.getElementById('previewCard');
+  const tabChatBtn = document.getElementById('tabChatBtn');
+  const tabPdfBtn = document.getElementById('tabPdfBtn');
+  const badge = document.getElementById('pdfUpdateBadge');
+
+  if (tab === 'chat') {
+    if (chatCard) chatCard.classList.remove('mobile-hide');
+    if (previewCard) previewCard.classList.add('mobile-hide');
+    if (tabChatBtn) tabChatBtn.classList.add('active');
+    if (tabPdfBtn) tabPdfBtn.classList.remove('active');
+  } else {
+    if (chatCard) chatCard.classList.add('mobile-hide');
+    if (previewCard) previewCard.classList.remove('mobile-hide');
+    if (tabChatBtn) tabChatBtn.classList.remove('active');
+    if (tabPdfBtn) tabPdfBtn.classList.add('active');
+    if (badge) badge.style.display = 'none';
+  }
+}
+
+// Check window resize to clear mobile-hide classes on desktop
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 900) {
+    const chatCard = document.getElementById('chatCard');
+    const previewCard = document.getElementById('previewCard');
+    if (chatCard) chatCard.classList.remove('mobile-hide');
+    if (previewCard) previewCard.classList.remove('mobile-hide');
+  } else {
+    switchMobileTab(currentMobileTab);
+  }
+});
+
 // Scroll chat to bottom on load if already in workspace
 const cs = document.getElementById('chatStream');
 if (cs) cs.scrollTop = cs.scrollHeight;
+
+// Initialize mobile tab state on load
+if (window.innerWidth <= 900) {
+  switchMobileTab('chat');
+}
 </script>
 
 </body>
