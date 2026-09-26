@@ -1,0 +1,5 @@
+flask
+google-genai
+weasyprint
+python-dotenv
+gunicorn
