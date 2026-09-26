@@ -5,6 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>مولّد المذكرة الذكي — AI Booklet</title>
 <meta name="description" content="حوّل نصوصك إلى مذكرات PDF احترافية مع تعديل بصري مباشر بالذكاء الاصطناعي">
+
+<!-- PWA Metadata -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#6c63ff">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AI Booklet">
+<link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/static/icons/favicon.png">
+
 <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -26,6 +37,9 @@
         <span class="usage-dot"></span>
         <span>التحويلات المتبقية: <strong id="usageCount">{{ remaining if remaining is defined else 30 }}</strong> / 30</span>
       </div>
+      <button class="btn-secondary btn-sm pwa-btn" id="pwaInstallBtn" onclick="installPWA()" style="display: none;" title="تثبيت التطبيق على جهازك">
+        <span>📲 تثبيت التطبيق</span>
+      </button>
       <button class="btn-secondary btn-sm" id="newBookletBtn" onclick="resetToNewBooklet()" style="display: {% if has_booklet %}inline-flex{% else %}none{% endif %};">
         <span>+ مذكرة جديدة</span>
       </button>
@@ -555,7 +569,51 @@ if (cs) cs.scrollTop = cs.scrollHeight;
 if (window.innerWidth <= 900) {
   switchMobileTab('chat');
 }
+
+// ─── PWA (Progressive Web App) Installation & Service Worker ───
+let deferredInstallPrompt = null;
+const pwaInstallBtn = document.getElementById('pwaInstallBtn');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  if (pwaInstallBtn) {
+    pwaInstallBtn.style.display = 'inline-flex';
+  }
+});
+
+async function installPWA() {
+  if (!deferredInstallPrompt) {
+    alert('لتثبيت التطبيق على جهازك:\n- على Android/Chrome: اضغط على خيارات المتصفح (⋮) ثم اختر "تثبيت التطبيق" أو "إضافة إلى الشاشة الرئيسية".\n- على iPhone/Safari: اضغط على زر المشاركة (Share) ثم اختر "إضافة إلى الصفحة الرئيسية (Add to Home Screen)".');
+    return;
+  }
+  deferredInstallPrompt.prompt();
+  const choice = await deferredInstallPrompt.userChoice;
+  if (choice.outcome === 'accepted') {
+    if (pwaInstallBtn) pwaInstallBtn.style.display = 'none';
+  }
+  deferredInstallPrompt = null;
+}
+
+window.addEventListener('appinstalled', () => {
+  if (pwaInstallBtn) pwaInstallBtn.style.display = 'none';
+  deferredInstallPrompt = null;
+});
+
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then((reg) => {
+        console.log('PWA Service Worker registered:', reg.scope);
+      })
+      .catch((err) => {
+        console.log('PWA Service Worker registration failed:', err);
+      });
+  });
+}
 </script>
 
 </body>
 </html>
+

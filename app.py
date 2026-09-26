@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from google import genai
 
 load_dotenv()
-from flask import Flask, render_template, request, session, redirect, url_for, Response
+from flask import Flask, render_template, request, session, redirect, url_for, Response, send_from_directory
 
 try:
     from weasyprint import HTML as WeasyprintHTML
@@ -173,6 +173,16 @@ def generate_pdf(data, override_css=""):
         except Exception:
             pass
     return None
+
+@app.route("/sw.js")
+def service_worker():
+    response = send_from_directory("static", "sw.js", mimetype="application/javascript")
+    response.headers["Service-Worker-Allowed"] = "/"
+    return response
+
+@app.route("/manifest.json")
+def manifest():
+    return send_from_directory("static", "manifest.json", mimetype="application/manifest+json")
 
 @app.route("/")
 def index():
