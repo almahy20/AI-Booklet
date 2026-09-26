@@ -6,15 +6,21 @@ from google import genai
 
 load_dotenv()
 from flask import Flask, render_template, request, session, redirect, url_for, Response
-from weasyprint import HTML as WeasyprintHTML
+
+try:
+    from weasyprint import HTML as WeasyprintHTML
+    HAS_WEASYPRINT = True
+except Exception:
+    WeasyprintHTML = None
+    HAS_WEASYPRINT = False
 
 app = Flask(__name__)
-app.secret_key = "abf-secret-2024"
-app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(__file__), 'uploads')
+app.secret_key = os.environ.get("SECRET_KEY", "abf-secret-2024-unified")
+app.config['UPLOAD_FOLDER'] = "/tmp/uploads" if os.environ.get("VERCEL") else os.path.join(os.path.dirname(__file__), 'uploads')
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 MONTHLY_LIMIT = 30
-USAGE_FILE = os.path.join(os.path.dirname(__file__), "usage.json")
+USAGE_FILE = "/tmp/usage.json" if os.environ.get("VERCEL") else os.path.join(os.path.dirname(__file__), "usage.json")
 
 def _load_usage():
     if not os.path.exists(USAGE_FILE):
@@ -161,7 +167,12 @@ def validate_structure(data):
 
 def generate_pdf(data, override_css=""):
     html_str = render_template("booklet.html", data=data, override_css=override_css)
-    return WeasyprintHTML(string=html_str, base_url=None).write_pdf()
+    if HAS_WEASYPRINT and WeasyprintHTML:
+        try:
+            return WeasyprintHTML(string=html_str, base_url=None).write_pdf()
+        except Exception:
+            pass
+    return None
 
 @app.route("/")
 def index():
@@ -231,8 +242,10 @@ def pdf_styled():
         return redirect(url_for("index"))
     custom_css = session.get("custom_css", "")
     pdf = generate_pdf(data, custom_css)
-    return Response(pdf, mimetype="application/pdf",
-                    headers={"Content-Disposition": "inline; filename=booklet.pdf"})
+    if pdf:
+        return Response(pdf, mimetype="application/pdf",
+                        headers={"Content-Disposition": "inline; filename=booklet.pdf"})
+    return render_template("booklet.html", data=data, override_css=custom_css, is_html_preview=True)
 
 @app.route("/download")
 def download():
@@ -241,8 +254,10 @@ def download():
         return redirect(url_for("index"))
     custom_css = session.get("custom_css", "")
     pdf = generate_pdf(data, custom_css)
-    return Response(pdf, mimetype="application/pdf",
-                    headers={"Content-Disposition": "attachment; filename=booklet.pdf"})
+    if pdf:
+        return Response(pdf, mimetype="application/pdf",
+                        headers={"Content-Disposition": "attachment; filename=booklet.pdf"})
+    return render_template("booklet.html", data=data, override_css=custom_css, auto_print=True)
 
 AI_COPILOT_PROMPT = """You are an intelligent AI Booklet Assistant and Document Editor.
 You have full capability to execute the user's instructions on this booklet, but you MUST follow strict precision and logic.
