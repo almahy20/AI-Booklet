@@ -7,20 +7,45 @@
 {% if not is_pdf_mode %}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="/static/html2pdf.bundle.min.js"></script>
 {% endif %}
 
 <style>
 @page {
   size: A4;
-  margin: 12mm 14mm;
+  margin: 2cm;
+}
+
+@font-face {
+  font-family: 'Amiri';
+  src: url('static/fonts/Amiri-Regular.ttf') format('truetype'),
+       url('/static/fonts/Amiri-Regular.ttf') format('truetype');
+  font-weight: 400 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Noto Sans Arabic';
+  src: url('static/fonts/NotoSansArabic-Regular.ttf') format('truetype'),
+       url('/static/fonts/NotoSansArabic-Regular.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+}
+
+:root {
+  --font-main: "Amiri", "Noto Sans Arabic", Tahoma, Arial, sans-serif;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+body, table, th, td, h1, h2, h3, .exercise, .note, .cover,
+.cover-page, .sec-heading, .sec-paragraph, .sec-bullets,
+.sec-numbered-list, .sec-table, .sec-callout, .sec-exercise {
+  font-family: var(--font-main) !important;
+}
+
 body {
-  font-family: 'Cairo', 'Segoe UI', Tahoma, 'Arial', sans-serif;
   font-size: 10.5pt;
   color: #1a1a1a;
   background: #f8fafc;
@@ -28,6 +53,9 @@ body {
   line-height: 1.65;
   padding: 0;
   margin: 0;
+  text-align: right;
+  word-spacing: normal;
+  letter-spacing: normal;
 }
 
 /* Standalone container when viewed in browser */
@@ -65,7 +93,7 @@ body {
   justify-content: space-between;
   gap: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-  font-family: 'Cairo', sans-serif;
+  font-family: var(--font-main);
 }
 
 .booklet-toolbar .title {
@@ -110,23 +138,57 @@ body {
   background: #475569;
 }
 
-/* cover strip */
-.booklet-title {
-  background: #1a1a2e;
-  color: #fff;
-  padding: 6mm 8mm;
-  margin-bottom: 5mm;
-  border-radius: 2mm;
-  page-break-after: avoid;
-  break-after: avoid;
+/* Cover page - full standalone page */
+.cover-page, .cover {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  min-height: 230mm;
+  box-sizing: border-box;
+  padding: 40mm 15mm 20mm;
+  page-break-after: always !important;
+  break-after: page !important;
 }
 
-.booklet-title h1 {
-  font-size: 16pt;
-  font-weight: 700;
-  font-family: 'Cairo', sans-serif;
-  line-height: 1.3;
-  margin: 0;
+/* Inline header when content is short and doesn't need a separate cover page */
+.cover-page.cover-inline {
+  min-height: auto !important;
+  padding: 6mm 10mm 4mm !important;
+  page-break-after: avoid !important;
+  break-after: avoid !important;
+  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 6mm;
+}
+.cover-page.cover-inline .cover-title {
+  font-size: 18pt !important;
+  margin-bottom: 2mm !important;
+}
+.cover-page.cover-inline .cover-subtitle {
+  font-size: 11pt !important;
+}
+
+.cover-content {
+  width: 100%;
+  text-align: center;
+}
+
+.cover-title {
+  font-size: 26pt;
+  font-weight: 800;
+  color: #1a1a2e;
+  line-height: 1.4;
+  margin-bottom: 6mm;
+  text-align: center;
+}
+
+.cover-subtitle {
+  font-size: 13pt;
+  font-weight: 600;
+  color: #4b5563;
+  line-height: 1.6;
+  text-align: center;
 }
 
 /* heading */
@@ -137,17 +199,18 @@ body {
   border-right: 3.5px solid #1a1a2e;
   padding-right: 3mm;
   margin: 5mm 0 2.5mm;
+  text-align: right;
   page-break-after: avoid;
   break-after: avoid;
 }
 
-/* paragraph */
+/* paragraph - aligned right for proper Arabic text flow */
 .sec-paragraph {
   font-size: 10pt;
   line-height: 1.65;
   color: #2d3748;
   margin-bottom: 3.5mm;
-  text-align: justify;
+  text-align: right;
 }
 
 /* bullet list */
@@ -155,6 +218,7 @@ body {
   margin: 0 4mm 3.5mm 0;
   padding: 0;
   list-style: none;
+  text-align: right;
 }
 
 .sec-bullets li {
@@ -164,6 +228,7 @@ body {
   padding-right: 4.5mm;
   position: relative;
   margin-bottom: 1.5mm;
+  text-align: right;
 }
 
 .sec-bullets li::before {
@@ -176,29 +241,31 @@ body {
 }
 
 /* exercise box */
-.sec-exercise {
+.exercise, .sec-exercise {
   background: #f8f9ff;
   border: 1px solid #c7d2fe;
   border-radius: 2.5mm;
   padding: 3.5mm 4.5mm;
   margin: 3.5mm 0;
-  page-break-inside: avoid;
-  break-inside: avoid;
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+  text-align: right;
 }
 
 .sec-exercise .ex-label {
-  font-size: 8pt;
+  font-size: 8.5pt;
   font-weight: 700;
   color: #3730a3;
   text-transform: uppercase;
-  letter-spacing: .5pt;
   margin-bottom: 1.5mm;
+  letter-spacing: normal;
 }
 
 .sec-exercise .ex-question {
   font-size: 10pt;
   line-height: 1.55;
   color: #1e1b4b;
+  text-align: right;
 }
 
 .sec-exercise .ex-options {
@@ -214,6 +281,7 @@ body {
   background: rgba(255,255,255,0.7);
   border-radius: 1.5mm;
   border: 1px solid #e2e8f0;
+  text-align: right;
 }
 
 .sec-exercise .ex-answer {
@@ -227,6 +295,7 @@ body {
   margin: 0 5mm 3.5mm 0;
   padding: 0;
   list-style-type: decimal;
+  text-align: right;
 }
 
 .sec-numbered-list li {
@@ -235,6 +304,7 @@ body {
   color: #2d3748;
   margin-bottom: 1.5mm;
   padding-right: 1.5mm;
+  text-align: right;
 }
 
 /* tables */
@@ -242,16 +312,19 @@ body {
   margin: 4mm 0 5mm;
   width: 100%;
   overflow: hidden;
-  page-break-inside: avoid;
-  break-inside: avoid;
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
 }
 
-.sec-table {
+table, .sec-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 9.5pt;
   border: 1px solid #cbd5e1;
   border-radius: 2mm;
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+  text-align: right;
 }
 
 .sec-table th {
@@ -268,6 +341,7 @@ body {
   border: 1px solid #e2e8f0;
   color: #334155;
   line-height: 1.5;
+  text-align: right;
 }
 
 .sec-table tr:nth-child(even) td {
@@ -275,14 +349,15 @@ body {
 }
 
 /* callouts / notes / tips */
-.sec-callout {
+.note, .sec-callout {
   background: #fefce8;
   border-right: 4px solid #ca8a04;
   border-radius: 2mm;
   padding: 3.5mm 4.5mm;
   margin: 3.5mm 0;
-  page-break-inside: avoid;
-  break-inside: avoid;
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+  text-align: right;
 }
 
 .sec-callout .callout-title {
@@ -290,12 +365,14 @@ body {
   font-size: 9pt;
   color: #854d0e;
   margin-bottom: 1.5mm;
+  text-align: right;
 }
 
 .sec-callout p {
   font-size: 9.5pt;
   line-height: 1.55;
   color: #713f12;
+  text-align: right;
 }
 
 /* quotes */
@@ -306,14 +383,16 @@ body {
   margin: 3.5mm 0;
   border-radius: 2mm;
   font-style: italic;
-  page-break-inside: avoid;
-  break-inside: avoid;
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+  text-align: right;
 }
 
 .sec-quote p {
   font-size: 10pt;
   line-height: 1.6;
   color: #4338ca;
+  text-align: right;
 }
 
 .sec-quote footer {
@@ -329,21 +408,28 @@ body {
   color: #e2e8f0;
   padding: 3.5mm 4.5mm;
   border-radius: 2mm;
-  font-family: 'Courier New', monospace;
+  font-family: Consolas, 'Courier New', monospace;
   font-size: 9pt;
   direction: ltr;
   text-align: left;
   white-space: pre-wrap;
   margin: 3.5mm 0;
-  page-break-inside: avoid;
-  break-inside: avoid;
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+}
+
+code, .math-eq {
+  font-family: Consolas, 'Courier New', monospace !important;
+  direction: ltr !important;
+  unicode-bidi: isolate !important;
+  display: inline-block;
 }
 
 /* Print Optimization */
 @media print {
   @page {
     size: A4;
-    margin: 12mm 14mm;
+    margin: 2cm;
   }
   html, body {
     background: #ffffff !important;
@@ -365,7 +451,7 @@ body {
     page-break-after: avoid !important;
     break-after: avoid !important;
   }
-  .sec-exercise, .sec-callout, .sec-quote, .sec-table-wrap {
+  .exercise, .note, table, .sec-exercise, .sec-callout, .sec-quote, .sec-table-wrap, .sec-table {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }
@@ -374,7 +460,7 @@ body {
 
 {% if override_css %}
 <style id="custom-override-css">
-{{ override_css }}
+{{ override_css | safe }}
 </style>
 {% endif %}
 </head>
@@ -400,13 +486,19 @@ body {
 
 <div class="booklet-container" id="bookletContent">
 
-  <div class="booklet-title">
-    <h1>{{ data.title }}</h1>
-  </div>
-
   {% for s in data.sections %}
 
-    {% if s.type in ("heading", "title", "subheading", "h1", "h2", "h3") %}
+    {% if s.type == "cover" %}
+    <div class="cover-page cover {% if not s.get('standalone', True) %}cover-inline{% endif %}">
+      <div class="cover-content">
+        <h1 class="cover-title">{{ s.title or data.title }}</h1>
+        {% if s.subtitle or data.subtitle %}
+        <p class="cover-subtitle">{{ s.subtitle or data.subtitle }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    {% elif s.type in ("heading", "title", "subheading", "h1", "h2", "h3") %}
     <div class="sec-heading">{{ s.text or s.title }}</div>
 
     {% elif s.type == "paragraph" %}
@@ -451,7 +543,7 @@ body {
     </div>
 
     {% elif s.type in ("callout", "note", "tip", "warning", "box", "highlight") %}
-    <div class="sec-callout">
+    <div class="sec-callout note">
       <div class="callout-title">💡 {{ s.title or 'ملاحظة هامة' }}</div>
       <p>{{ s.text }}</p>
     </div>
@@ -466,7 +558,7 @@ body {
     <pre class="sec-code"><code>{{ s.code or s.text }}</code></pre>
 
     {% elif s.type in ("exercise", "quiz", "question") %}
-    <div class="sec-exercise">
+    <div class="sec-exercise exercise">
       <div class="ex-label">تمرين</div>
       <div class="ex-question">{{ s.question or s.text }}</div>
       {% if s.options %}
@@ -485,7 +577,9 @@ body {
 
     {% else %}
     <!-- Fallback for any generic section -->
-    <p class="sec-paragraph">{{ s.text or s.question or s }}</p>
+    {% if s.text %}
+    <p class="sec-paragraph">{{ s.text }}</p>
+    {% endif %}
     {% endif %}
 
   {% endfor %}
